@@ -11,7 +11,7 @@ dotenv.config();
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
-import menuRoutes from './routes/menuRoutes.js';
+import menuRoutes from './routes/menuRoutesCloudinary.js'; // Using Cloudinary for image storage
 import orderRoutes from './routes/orderRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 
