@@ -159,7 +159,7 @@ const getCloudinaryPublicId = (imageUrl) => {
 // @access  Private/Admin
 export const createMenuItem = async (req, res) => {
   try {
-    const { categoryId, name, description, price, originalPrice, isAvailable, isFeatured } = req.body;
+    const { categoryId, name, description, price, originalPrice, isAvailable, isFeatured, extras, portions } = req.body;
 
     let imageUrl = null;
     if (req.file) {
@@ -167,9 +167,20 @@ export const createMenuItem = async (req, res) => {
       imageUrl = req.file.path;
     }
 
+    // Parse extras and portions if they're strings (from form data)
+    let extrasArray = [];
+    let portionsArray = [];
+
+    try {
+      extrasArray = extras ? (typeof extras === 'string' ? JSON.parse(extras) : extras) : [];
+      portionsArray = portions ? (typeof portions === 'string' ? JSON.parse(portions) : portions) : [];
+    } catch (parseError) {
+      console.error('Error parsing extras or portions:', parseError);
+    }
+
     const items = await sql`
-      INSERT INTO menu_items (category_id, name, description, price, original_price, image_url, is_available, is_featured)
-      VALUES (${categoryId}, ${name}, ${description}, ${price}, ${originalPrice || null}, ${imageUrl}, ${isAvailable !== undefined ? isAvailable : true}, ${isFeatured || false})
+      INSERT INTO menu_items (category_id, name, description, price, original_price, image_url, is_available, is_featured, extras, portions)
+      VALUES (${categoryId}, ${name}, ${description}, ${price}, ${originalPrice || null}, ${imageUrl}, ${isAvailable !== undefined ? isAvailable : true}, ${isFeatured || false}, ${JSON.stringify(extrasArray)}, ${JSON.stringify(portionsArray)})
       RETURNING *
     `;
 
@@ -186,7 +197,7 @@ export const createMenuItem = async (req, res) => {
 export const updateMenuItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const { categoryId, name, description, price, originalPrice, isAvailable, isFeatured } = req.body;
+    const { categoryId, name, description, price, originalPrice, isAvailable, isFeatured, extras, portions } = req.body;
 
     // Get existing item
     const existingItems = await sql`
@@ -214,6 +225,17 @@ export const updateMenuItem = async (req, res) => {
       imageUrl = req.file.path;
     }
 
+    // Parse extras and portions if they're strings (from form data)
+    let extrasArray = [];
+    let portionsArray = [];
+
+    try {
+      extrasArray = extras ? (typeof extras === 'string' ? JSON.parse(extras) : extras) : [];
+      portionsArray = portions ? (typeof portions === 'string' ? JSON.parse(portions) : portions) : [];
+    } catch (parseError) {
+      console.error('Error parsing extras or portions:', parseError);
+    }
+
     const items = await sql`
       UPDATE menu_items
       SET
@@ -225,6 +247,8 @@ export const updateMenuItem = async (req, res) => {
         image_url = ${imageUrl},
         is_available = ${isAvailable},
         is_featured = ${isFeatured},
+        extras = ${JSON.stringify(extrasArray)},
+        portions = ${JSON.stringify(portionsArray)},
         updated_at = NOW()
       WHERE id = ${id}
       RETURNING *
